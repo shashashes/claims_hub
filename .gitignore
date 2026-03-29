@@ -1,0 +1,7 @@
+.DS_Store
+.npm-cache
+.npm
+.nvm
+node_modules
+dist
+.env
