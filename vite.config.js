@@ -8,7 +8,7 @@ export default defineConfig({
       '/api/trackingmore': {
         target: 'https://api.trackingmore.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/trackingmore/, '/v4'),
+        rewrite: (path) => '/v4/trackings/get',
         headers: {
           'Tracking-Api-Key': process.env.VITE_TM_API_KEY || ''
         }

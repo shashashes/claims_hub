@@ -20,10 +20,7 @@ export default async function handler(req, res) {
   try {
     // Forward query params to TrackingMore
     const params = new URLSearchParams(req.query);
-    // Remove our internal params
-    const endpoint = params.get('endpoint') || '/trackings';
-    params.delete('endpoint');
-
+    const endpoint = '/trackings/get';
     const tmUrl = `https://api.trackingmore.com/v4${endpoint}?${params.toString()}`;
 
     const tmRes = await fetch(tmUrl, {

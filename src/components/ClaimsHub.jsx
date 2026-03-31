@@ -105,9 +105,9 @@ function uid() { return `t-${Date.now()}-${Math.random().toString(36).slice(2, 7
 // ─── TrackingMore API ────────────────────────────────────────────────
 async function fetchTrackingMore(statusFilter = "inforeceived,exception") {
   const params = new URLSearchParams({
-    endpoint: '/trackings/get',
     delivery_status: statusFilter,
-    page_size: '200',
+    items_amount: '200',
+    pages_amount: '1',
     created_date_min: '2026-01-01T00:00:00+00:00',
   });
   const res = await fetch(`/api/trackingmore?${params}`);
