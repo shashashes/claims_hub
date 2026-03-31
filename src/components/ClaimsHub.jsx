@@ -70,6 +70,28 @@ function generateClaimText(track) {
   return `Claim for undelivered package\n\n${base}\n\nPlease investigate this shipment.`;
 }
 
+function generateUPSContact(track) {
+  const { trackingNumber, shipDate, lastEvent, orderNumber, productTitle } = track;
+  return [
+    "UPS Claim Request — Lost Package",
+    "",
+    `Tracking: ${trackingNumber}`,
+    orderNumber ? `Order/Ref: ${orderNumber}` : "Order/Ref: [add if any]",
+    `Ship date: ${shipDate || "[yyyy-mm-dd]"}`,
+    `Last update: ${lastEvent || "No events recorded"}`,
+    `Contents: ${productTitle || "[item description]"}`,
+    "Claim type: Lost Package",
+    "Declared value: [enter amount]",
+    "",
+    "Attachments prepared:",
+    "- Commercial invoice (value proof)",
+    "- Shipping receipt / label",
+    "- Tracking history screenshot",
+    "",
+    "Please open an investigation or issue compensation. Thank you."
+  ].join("\n");
+}
+
 function generateStepsTaken(track) {
   const { carrier, trackingNumber, trackStatus, lastEvent } = track;
   if (carrier === "AMAZON") return `I checked the tracking status on track.amazon.com for ${trackingNumber}. The status has been stuck on "${trackStatus || "Info Received"}" with no scans or movement since the label was created. The package was never picked up by the carrier. I am requesting an investigation and compensation for this lost shipment.`;
@@ -83,7 +105,7 @@ function uid() { return `t-${Date.now()}-${Math.random().toString(36).slice(2, 7
 // ─── TrackingMore API ────────────────────────────────────────────────
 async function fetchTrackingMore(statusFilter = "inforeceived,exception") {
   const params = new URLSearchParams({
-    endpoint: '/trackings',
+    endpoint: '/trackings/get',
     delivery_status: statusFilter,
     page_size: '200',
     created_date_min: '2026-01-01T00:00:00+00:00',
@@ -357,6 +379,7 @@ export default function ClaimsHub() {
 function TrackDetail({track,onUpdate,onDelete,onBack}) {
   const [showClaim,setShowClaim]=useState(false);
   const [showSteps,setShowSteps]=useState(false);
+  const [showUPS,setShowUPS]=useState(false);
   const [copied,setCopied]=useState("");
   const carrier=CARRIERS[track.carrier]||CARRIERS.UNKNOWN;
   const rules=CLAIM_RULES[track.carrier];
@@ -411,12 +434,21 @@ function TrackDetail({track,onUpdate,onDelete,onBack}) {
       <div style={{marginTop:16,display:"flex",gap:8,flexWrap:"wrap"}}>
         <button style={{...S.btn,...S.btnPrimary}} onClick={()=>setShowClaim(!showClaim)}>{showClaim?"Скрыть":"📄 Текст клейма"}</button>
         <button style={{...S.btn,background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}} onClick={()=>setShowSteps(!showSteps)}>{showSteps?"Скрыть":"📋 Steps Taken"}</button>
+        <button style={{...S.btn,background:"#f0f9ff",color:"#0ea5e9",border:"1px solid #bae6fd"}} onClick={()=>setShowUPS(!showUPS)} disabled={track.carrier!=="UPS"}>{showUPS?"Скрыть":"✉️ Запрос в UPS"}</button>
         <button style={{...S.btn,background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}} onClick={()=>onUpdate({claimStatus:"FILED",claimFiledDate:new Date().toISOString().split("T")[0]})}>✓ Отметить «Подан»</button>
         <button style={{...S.btn,background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca"}} onClick={onDelete}>🗑️</button>
       </div>
 
       {showClaim&&<CopyBlock text={generateClaimText(track)} label="claim" copied={copied} onCopy={()=>copy(generateClaimText(track),"claim")}/>}
       {showSteps&&<CopyBlock text={generateStepsTaken(track)} label="steps" copied={copied} onCopy={()=>copy(generateStepsTaken(track),"steps")}/>}
+      {showUPS&&track.carrier==="UPS"&&(
+        <div style={{marginTop:12}}>
+          <CopyBlock text={generateUPSContact(track)} label="ups" copied={copied} onCopy={()=>copy(generateUPSContact(track),"ups")}/>
+          <a href="https://www.ups.com/claim" target="_blank" rel="noreferrer" style={{fontSize:12,color:"#0ea5e9",textDecoration:"underline",marginTop:6,display:"inline-block"}}>
+            Открыть форму UPS Claims
+          </a>
+        </div>
+      )}
 
       {track.syncedAt&&<p style={{fontSize:11,color:"#94a3b8",marginTop:12}}>Синхр.: {fmtDate(track.syncedAt)}</p>}
     </div>
